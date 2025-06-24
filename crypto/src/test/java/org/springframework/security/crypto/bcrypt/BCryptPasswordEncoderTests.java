@@ -218,7 +218,7 @@ public class BCryptPasswordEncoderTests {
 	public void checkWhenNoRoundsThenTrue() {
 		BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 		assertThat(encoder.matches("password", "$2a$00$9N8N35BVs5TLqGL3pspAte5OWWA2a2aZIs.EGp7At7txYakFERMue"))
-				.isTrue();
+			.isTrue();
 		assertThat(encoder.matches("wrong", "$2a$00$9N8N35BVs5TLqGL3pspAte5OWWA2a2aZIs.EGp7At7txYakFERMue")).isFalse();
 	}
 
@@ -250,7 +250,7 @@ public class BCryptPasswordEncoderTests {
 		// match to be performed.
 		String password73chars = password72chars + "3";
 		String encodedPassword73chars = "$2a$10$1l9.kvQTsqNLiCYFqmKtQOHkp.BrgIrwsnTzWo9jdbQRbuBYQ/AVK";
-		assertThat(encoder.matches(password73chars, encodedPassword73chars)).isTrue();
+		assertThatIllegalArgumentException().isThrownBy(() -> encoder.matches(password73chars, encodedPassword73chars));
 	}
 
 }
