@@ -250,7 +250,7 @@ public class BCryptPasswordEncoderTests {
 		// match to be performed.
 		String password73chars = password72chars + "3";
 		String encodedPassword73chars = "$2a$10$1l9.kvQTsqNLiCYFqmKtQOHkp.BrgIrwsnTzWo9jdbQRbuBYQ/AVK";
-		assertThat(encoder.matches(password73chars, encodedPassword73chars)).isTrue();
+		assertThatIllegalArgumentException().isThrownBy(() -> encoder.matches(password73chars, encodedPassword73chars));
 	}
 
 }
