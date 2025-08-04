@@ -8,9 +8,12 @@ dependencies {
 	compile 'org.springframework:spring-context'
 	compile 'org.springframework:spring-expression'
 	compile 'org.springframework:spring-web'
+	compile 'io.projectreactor:reactor-bom:Bismuth-SR17'
+	compile 'org.springframework:spring-framework-bom:5.0.19.RELEASE'
+	compile 'org.springframework.data:spring-data-releasetrain:Kay-SR14'
 
 	optional 'com.fasterxml.jackson.core:jackson-databind'
-	optional 'io.projectreactor:reactor-core'
+//	optional 'io.projectreactor:reactor-core'
 	optional 'org.springframework:spring-jdbc'
 	optional 'org.springframework:spring-tx'
 	optional 'org.springframework:spring-webflux'
@@ -30,3 +33,14 @@ dependencies {
 
 	testRuntime 'org.hsqldb:hsqldb'
 }
+repositories{
+	mavenCentral()
+	gradlePluginPortal()
+	jcenter()
+	maven { url 'https://repo.spring.io/plugins-snapshot' }
+	maven {
+		name = "jfreleases"
+		url = "https://releases.jfrog.io/artifactory/oss-releases/"
+	}
+}
+

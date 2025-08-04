@@ -6,6 +6,19 @@ dependencies {
 	compile 'org.springframework:spring-beans'
 	compile 'org.springframework:spring-context'
 	compile 'org.springframework:spring-core'
+	compile 'io.projectreactor:reactor-bom:Bismuth-SR17'
+	compile 'org.springframework:spring-framework-bom:5.0.19.RELEASE'
+	compile 'org.springframework.data:spring-data-releasetrain:Kay-SR14'
 
 	testCompile 'org.springframework:spring-aop'
+}
+repositories{
+	mavenCentral()
+	gradlePluginPortal()
+	jcenter()
+	maven { url 'https://repo.spring.io/plugins-snapshot' }
+	maven {
+		name = "jfreleases"
+		url = "https://releases.jfrog.io/artifactory/oss-releases/"
+	}
 }

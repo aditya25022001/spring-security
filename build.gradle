@@ -1,10 +1,51 @@
 buildscript {
+	configurations.all {
+		resolutionStrategy.dependencySubstitution {
+			substitute module('io.spring.gradle:spring-io-plugin:0.0.8.RELEASE') with module('io.spring.gradle:spring-io-plugin:0.0.8.BUILD-SNAPSHOT')
+			substitute module('io.spring.gradle:propdeps-plugin:0.0.10.RELEASE') with module('io.spring.gradle:propdeps-plugin:0.0.8-SNAPSHOT')
+			substitute module('io.spring.gradle:docbook-reference-plugin:0.3.1') with module('io.spring.gradle:docbook-reference-plugin:0.3.1-SNAPSHOT')
+			substitute module('org.apache.xerces:xercesImpl') with module('xerces:xercesImpl:2.9.1')
+			substitute module('org.apache.xerces:resolver') with module('xerces:resolver:2.9.1')
+			substitute module('org.asciidoctor:asciidoctorj-groovy-dsl:1.0.0.Alpha2') with module('org.asciidoctor:asciidoctorj-groovy-dsl:2.0.1')
+		}
+	}
 	dependencies {
-		classpath 'io.spring.gradle:spring-build-conventions:0.0.15.RELEASE'
-		classpath "org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion"
+		classpath 'io.spring.gradle:spring-build-conventions:0.0.15.BUILD-SNAPSHOT'
+		classpath "org.springframework.boot:spring-boot-gradle-plugin:2.0.9.BUILD-SNAPSHOT"
+		classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.6.2'
+		classpath 'org.jfrog.buildinfo:build-info-extractor:2.9.4'
+		classpath 'io.spring.gradle:spring-io-plugin:0.0.8.BUILD-SNAPSHOT'
+		classpath 'io.spring.gradle:propdeps-plugin:0.0.8-SNAPSHOT'
+		classpath 'io.spring.gradle:docbook-reference-plugin:0.3.1-SNAPSHOT'
+		classpath name: 'resolver-2.9.1'
+	}
+	subprojects {
+		repositories {
+			mavenCentral()
+			gradlePluginPortal()
+			jcenter()
+			maven { url 'https://repo.spring.io/plugins-snapshot' }
+			maven {
+				name = "jfreleases"
+				url = "https://releases.jfrog.io/artifactory/oss-releases/"
+			}
+			flatDir{
+				dirs 'libs'
+			}
+		}
 	}
 	repositories {
+		mavenCentral()
+		gradlePluginPortal()
+		jcenter()
 		maven { url 'https://repo.spring.io/plugins-snapshot' }
+		maven {
+			name = "jfreleases"
+			url = "https://releases.jfrog.io/artifactory/oss-releases/"
+		}
+		flatDir{
+			dirs 'libs'
+		}
 	}
 }
 apply plugin: 'io.spring.convention.root'
