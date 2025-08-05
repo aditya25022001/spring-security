@@ -1,11 +1,60 @@
 buildscript {
+    configurations.all {
+        resolutionStrategy.dependencySubstitution {
+            substitute module('io.spring.gradle:spring-io-plugin:0.0.8.RELEASE') with module('io.spring.gradle:spring-io-plugin:0.0.8.BUILD-SNAPSHOT')
+            substitute module('io.spring.gradle:propdeps-plugin:0.0.10.RELEASE') with module('io.spring.gradle:propdeps-plugin:0.0.8-SNAPSHOT')
+            substitute module('io.spring.gradle:docbook-reference-plugin:0.3.1') with module('io.spring.gradle:docbook-reference-plugin:0.3.1-SNAPSHOT')
+            substitute module('org.apache.xerces:xercesImpl') with module('xerces:xercesImpl:2.9.1')
+            substitute module('org.apache.xerces:resolver') with module('xerces:resolver:2.9.1')
+            substitute module('org.ysb33r.gradle:grolifant:0.10') with module('org.ysb33r.gradle:grolifant:0.14')
+            substitute module('org.asciidoctor:asciidoctorj-groovy-dsl:1.0.0.Alpha2') with module('org.asciidoctor:asciidoctorj-groovy-dsl:2.0.1')
+        }
+    }
+    subprojects {
+        repositories {
+            maven { url 'https://repo.spring.io/plugins-snapshot' }
+            maven { url 'https://plugins.gradle.org/m2/' }
+            mavenCentral()
+            gradlePluginPortal()
+            jcenter()
+            maven { url 'https://repo.spring.io/plugins-snapshot' }
+            maven {
+                name = "jfreleases"
+                url = "https://releases.jfrog.io/artifactory/oss-releases/"
+            }
+            flatDir{
+                dirs 'libs'
+            }
+        }
+    }
 	dependencies {
-		classpath 'io.spring.gradle:spring-build-conventions:0.0.25.RELEASE'
-		classpath "org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion"
+		classpath 'io.spring.gradle:spring-build-conventions:0.0.25.BUILD-SNAPSHOT'
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:2.0.9.BUILD-SNAPSHOT"
+        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.6.2'
+        classpath 'org.jfrog.buildinfo:build-info-extractor:2.9.4'
+        classpath 'io.spring.gradle:spring-io-plugin:0.0.8.BUILD-SNAPSHOT'
+        classpath 'io.spring.gradle:propdeps-plugin:0.0.8-SNAPSHOT'
+        classpath 'io.spring.gradle:docbook-reference-plugin:0.3.1-SNAPSHOT'
+        classpath name: 'resolver-2.9.1'
+        classpath name: 'grolifant-0.14'
+        classpath 'io.projectreactor:reactor-bom:Californium-SR21'
+        classpath 'org.springframework:spring-framework-bom:5.1.18.RELEASE'
+        classpath 'org.springframework.data:spring-data-releasetrain:Lovelace-SR20'
 	}
 	repositories {
 		maven { url 'https://repo.spring.io/plugins-snapshot' }
 		maven { url 'https://plugins.gradle.org/m2/' }
+        mavenCentral()
+        gradlePluginPortal()
+        jcenter()
+        maven { url 'https://repo.spring.io/plugins-snapshot' }
+        maven {
+            name = "jfreleases"
+            url = "https://releases.jfrog.io/artifactory/oss-releases/"
+        }
+        flatDir{
+            dirs 'libs'
+        }
 	}
 }
 apply plugin: 'io.spring.convention.root'
