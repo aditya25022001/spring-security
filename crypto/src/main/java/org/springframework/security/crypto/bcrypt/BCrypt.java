@@ -688,15 +688,27 @@ public class BCrypt {
 	 * @return	an array containing the binary hashed password
 	 */
 	private byte[] crypt_raw(byte password[], byte salt[], int log_rounds,
-							boolean sign_ext_bug, int safety) {
-		int rounds, i, j;
+							boolean sign_ext_bug, int safety, boolean for_check) {
+		int i, j;
 		int cdata[] =  bf_crypt_ciphertext.clone();
 		int clen = cdata.length;
 		byte ret[];
-
-		if (log_rounds < 4 || log_rounds > 31)
-			throw new IllegalArgumentException ("Bad number of rounds");
-		rounds = 1 << log_rounds;
+		long rounds;
+		if (log_rounds < 4 || log_rounds > 31){
+			if (!for_check){
+				throw new IllegalArgumentException ("Bad number of rounds");
+			}
+			if (log_rounds!=0){
+				throw new IllegalArgumentException ("Bad number of rounds");
+			}
+			rounds=0;
+		}
+		else {
+			rounds = roundsForLogRounds(log_rounds);
+			if (rounds < 16 || rounds > Integer.MAX_VALUE) {
+				throw new IllegalArgumentException("Bad number of rounds");
+			}
+		}
 		if (salt.length != BCRYPT_SALT_LEN)
 			throw new IllegalArgumentException ("Bad salt length");
 
@@ -734,7 +746,15 @@ public class BCrypt {
 
 		passwordb = password.getBytes(StandardCharsets.UTF_8);
 
-		return hashpw(passwordb, salt);
+		return hashpw(passwordb, salt, false);
+	}
+
+	public static String hashpw(byte[] passwordb, String salt) {
+		return hashpw(passwordb, salt, false);
+	}
+
+	public static String hashpwForCheck(byte[] passwordb, String salt) {
+		return hashpw(passwordb, salt, true);
 	}
 
 	/**
@@ -744,14 +764,23 @@ public class BCrypt {
 	 * using BCrypt.gensalt)
 	 * @return	the hashed password
 	 */
-	public static String hashpw(byte passwordb[], String salt) {
+	public static String hashpw(byte passwordb[], String salt, boolean for_check) {
 		BCrypt B;
 		String real_salt;
 		byte saltb[], hashed[];
 		char minor = (char) 0;
 		int rounds, off;
 		StringBuilder rs = new StringBuilder();
-
+		if (passwordb.length > 72) {
+			if (!for_check) {
+				throw new IllegalArgumentException(
+						"Password too long: New passwords must not exceed 72 characters, as only the first 72 characters are securely hashed. Please choose a shorter password.");
+			}
+			else {
+				throw new IllegalArgumentException(
+						"Password rejected: This password exceeds 72 characters. While it may be correct, we cannot verify it securely due to limitations in the previous hashing method. Please reset your password to ensure continued account security.");
+			}
+		}
 		if (salt == null) {
 			throw new IllegalArgumentException("salt cannot be null");
 		}
@@ -790,7 +819,7 @@ public class BCrypt {
 			passwordb = Arrays.copyOf(passwordb, passwordb.length + 1);
 
 		B = new BCrypt();
-		hashed = B.crypt_raw(passwordb, saltb, rounds, minor == 'x', minor == 'a' ? 0x10000 : 0);
+		hashed = B.crypt_raw(passwordb, saltb, rounds, minor == 'x', minor == 'a' ? 0x10000 : 0, for_check);
 
 		rs.append("$2");
 		if (minor >= 'a')
@@ -905,7 +934,8 @@ public class BCrypt {
 	 * @return	true if the passwords match, false otherwise
 	 */
 	public static boolean checkpw(String plaintext, String hashed) {
-		return equalsNoEarlyReturn(hashed, hashpw(plaintext, hashed));
+		byte[] passwordb = plaintext.getBytes(StandardCharsets.UTF_8);
+		return equalsNoEarlyReturn(hashed, hashpwForCheck(passwordb, hashed));
 	}
 
 	/**
@@ -917,7 +947,7 @@ public class BCrypt {
 	 * @since 5.3
 	 */
 	public static boolean checkpw(byte[] passwordb, String hashed) {
-		return equalsNoEarlyReturn(hashed, hashpw(passwordb, hashed));
+		return equalsNoEarlyReturn(hashed, hashpwForCheck(passwordb, hashed));
 	}
 
 	static boolean equalsNoEarlyReturn(String a, String b) {
