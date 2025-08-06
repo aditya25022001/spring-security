@@ -497,12 +497,27 @@ public class BCrypt {
 	 * @param log_rounds the binary logarithm of the number of rounds of hashing to apply
 	 * @return an array containing the binary hashed password
 	 */
-	private byte[] crypt_raw(byte password[], byte salt[], int log_rounds) {
+	private byte[] crypt_raw(byte password[], byte salt[], int log_rounds, boolean for_check) {
 		int cdata[] = (int[]) bf_crypt_ciphertext.clone();
 		int clen = cdata.length;
 		byte ret[];
 
-		long rounds = roundsForLogRounds(log_rounds);
+		long rounds;
+		if (log_rounds<4 ||log_rounds>31){
+			if (!for_check){
+				throw new IllegalArgumentException("Bad number of rounds");
+			}
+			if (log_rounds != 0) {
+				throw new IllegalArgumentException("Bad number of rounds");
+			}
+			rounds = 0;
+		}
+		else {
+			rounds = roundsForLogRounds(log_rounds);
+			if (rounds < 16 || rounds > 2147483648L) {
+				throw new IllegalArgumentException("Bad number of rounds");
+			}
+		}
 
 		init_key();
 		ekskey(salt, password);
@@ -527,6 +542,10 @@ public class BCrypt {
 		return ret;
 	}
 
+	public static String hashpw(String password, String salt){
+		return hashpw(password, salt, false);
+	}
+
 	/**
 	 * Hash a password using the OpenBSD bcrypt scheme
 	 * @param password the password to hash
@@ -534,7 +553,7 @@ public class BCrypt {
 	 * @return the hashed password
 	 * @throws IllegalArgumentException if invalid salt is passed
 	 */
-	public static String hashpw(String password, String salt) throws IllegalArgumentException {
+	public static String hashpw(String password, String salt, boolean for_check) throws IllegalArgumentException {
 		BCrypt B;
 		String real_salt;
 		byte passwordb[], saltb[], hashed[];
@@ -579,6 +598,16 @@ public class BCrypt {
 		real_salt = salt.substring(off + 3, off + 25);
 		try {
 			passwordb = (password + (minor >= 'a' ? "\000" : "")).getBytes("UTF-8");
+			if (passwordb.length > 72) {
+				if (!for_check) {
+					throw new IllegalArgumentException(
+							"Password too long: New passwords must not exceed 72 characters, as only the first 72 characters are securely hashed. Please choose a shorter password.");
+				}
+				else {
+					throw new IllegalArgumentException(
+							"Password rejected: This password exceeds 72 characters. While it may be correct, we cannot verify it securely due to limitations in the previous hashing method. Please reset your password to ensure continued account security.");
+				}
+			}
 		}
 		catch (UnsupportedEncodingException uee) {
 			throw new AssertionError("UTF-8 is not supported");
@@ -587,7 +616,7 @@ public class BCrypt {
 		saltb = decode_base64(real_salt, BCRYPT_SALT_LEN);
 
 		B = new BCrypt();
-		hashed = B.crypt_raw(passwordb, saltb, rounds);
+		hashed = B.crypt_raw(passwordb, saltb, rounds, for_check);
 
 		rs.append("$2");
 		if (minor >= 'a') {
