@@ -542,6 +542,10 @@ public class BCrypt {
 		return ret;
 	}
 
+	public static String hashpwForCheck(String password, String salt){
+		return hashpw(password, salt, true);
+	}
+
 	public static String hashpw(String password, String salt){
 		return hashpw(password, salt, false);
 	}
@@ -685,7 +689,7 @@ public class BCrypt {
 	 * @return true if the passwords match, false otherwise
 	 */
 	public static boolean checkpw(String plaintext, String hashed) {
-		return equalsNoEarlyReturn(hashed, hashpw(plaintext, hashed));
+		return equalsNoEarlyReturn(hashed, hashpwForCheck(plaintext, hashed));
 	}
 
 	static boolean equalsNoEarlyReturn(String a, String b) {
