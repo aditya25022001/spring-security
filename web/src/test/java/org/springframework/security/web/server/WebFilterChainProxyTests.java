@@ -18,6 +18,9 @@ package org.springframework.security.web.server;
 
 import org.junit.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.web.server.firewall.ServerExchangeRejectedException;
+import org.springframework.security.web.server.firewall.ServerExchangeRejectedHandler;
+import org.springframework.security.web.server.firewall.ServerWebExchangeFirewall;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher.MatchResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -25,6 +28,12 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.Arrays;
 import java.util.List;
@@ -48,6 +57,72 @@ public class WebFilterChainProxyTests {
 			.get()
 			.exchange()
 			.expectStatus().isNotFound();
+	}
+
+	@Test
+	public void doFilterWhenFirewallThenBadRequest() {
+		List<WebFilter> filters = Arrays.asList(new Http200WebFilter());
+		ServerWebExchangeMatcher notMatch = (exchange) -> MatchResult.notMatch();
+		MatcherSecurityWebFilterChain chain = new MatcherSecurityWebFilterChain(notMatch, filters);
+		WebFilterChainProxy filter = new WebFilterChainProxy(chain);
+		WebTestClient.bindToController(new Object()).webFilter(filter).build().get().uri("/invalid;/").exchange()
+				.expectStatus().isBadRequest();
+	}
+
+	@Test
+	public void doFilterWhenCustomFirewallThenInvoked() {
+		List<WebFilter> filters = Arrays.asList(new Http200WebFilter());
+		ServerWebExchangeMatcher notMatch = (exchange) -> MatchResult.notMatch();
+		MatcherSecurityWebFilterChain chain = new MatcherSecurityWebFilterChain(notMatch, filters);
+		WebFilterChainProxy filter = new WebFilterChainProxy(chain);
+		ServerExchangeRejectedHandler handler = mock(ServerExchangeRejectedHandler.class);
+		ServerWebExchangeFirewall firewall = mock(ServerWebExchangeFirewall.class);
+		filter.setFirewall(firewall);
+		filter.setExchangeRejectedHandler(handler);
+		WebTestClient.bindToController(new Object()).webFilter(filter).build().get().exchange();
+		verify(firewall).getFirewalledExchange(any());
+		verifyNoInteractions(handler);
+	}
+
+	@Test
+	public void doFilterWhenCustomExchangeRejectedHandlerThenInvoked() {
+		List<WebFilter> filters = Arrays.asList(new Http200WebFilter());
+		ServerWebExchangeMatcher notMatch = (exchange) -> MatchResult.notMatch();
+		MatcherSecurityWebFilterChain chain = new MatcherSecurityWebFilterChain(notMatch, filters);
+		WebFilterChainProxy filter = new WebFilterChainProxy(chain);
+		ServerExchangeRejectedHandler handler = mock(ServerExchangeRejectedHandler.class);
+		ServerWebExchangeFirewall firewall = mock(ServerWebExchangeFirewall.class);
+		given(firewall.getFirewalledExchange(any()))
+				.willReturn(Mono.error(new ServerExchangeRejectedException("Oops")));
+		filter.setFirewall(firewall);
+		filter.setExchangeRejectedHandler(handler);
+		WebTestClient.bindToController(new Object()).webFilter(filter).build().get().exchange();
+		verify(firewall).getFirewalledExchange(any());
+		verify(handler).handle(any(), any());
+	}
+
+	@Test
+	public void doFilterWhenDelayedServerExchangeRejectedException() {
+		List<WebFilter> filters = Arrays.asList(new WebFilter() {
+			@Override
+			public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+				// simulate a delayed error (e.g. reading parameters)
+				return Mono.error(new ServerExchangeRejectedException("Ooops"));
+			}
+		});
+		ServerWebExchangeMatcher match = (exchange) -> MatchResult.match();
+		MatcherSecurityWebFilterChain chain = new MatcherSecurityWebFilterChain(match, filters);
+		WebFilterChainProxy filter = new WebFilterChainProxy(chain);
+		ServerExchangeRejectedHandler handler = mock(ServerExchangeRejectedHandler.class);
+		filter.setExchangeRejectedHandler(handler);
+		// @formatter:off
+		WebTestClient.bindToController(new Object())
+				.webFilter(filter)
+				.build()
+				.get()
+				.exchange();
+		// @formatter:on
+		verify(handler).handle(any(), any());
 	}
 
 	static class Http200WebFilter implements WebFilter {
