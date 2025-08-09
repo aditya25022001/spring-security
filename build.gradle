@@ -1,6 +1,24 @@
 buildscript {
+	configurations.all {
+		resolutionStrategy.dependencySubstitution {
+			substitute module('io.spring.gradle:spring-io-plugin:0.0.8.RELEASE') with module('io.spring.gradle:spring-io-plugin:0.0.8.BUILD-SNAPSHOT')
+			substitute module('io.spring.gradle:propdeps-plugin:0.0.10.RELEASE') with module('io.spring.gradle:propdeps-plugin:0.0.8-SNAPSHOT')
+			substitute module('io.spring.gradle:docbook-reference-plugin:0.3.1') with module('io.spring.gradle:docbook-reference-plugin:0.3.1-SNAPSHOT')
+			substitute module('org.apache.xerces:xercesImpl') with module('xerces:xercesImpl:2.9.1')
+			substitute module('org.apache.xerces:resolver') with module('xerces:resolver:2.9.1')
+			substitute module('org.ysb33r.gradle:grolifant:0.10') with module('org.ysb33r.gradle:grolifant:0.14')
+			substitute module('org.mockito:mockito-core:3.3.1') with module('org.mockito:mockito-core:3.3.0')
+		}
+	}
 	dependencies {
-		classpath 'io.spring.gradle:spring-build-conventions:0.0.31.RELEASE'
+		classpath 'io.spring.gradle:spring-build-conventions:0.0.31.BUILD-SNAPSHOT'
+		classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.6.2'
+		classpath 'org.jfrog.buildinfo:build-info-extractor:2.9.4'
+		classpath 'io.spring.gradle:spring-io-plugin:0.0.8.BUILD-SNAPSHOT'
+		classpath 'io.spring.gradle:propdeps-plugin:0.0.8-SNAPSHOT'
+		classpath 'io.spring.gradle:docbook-reference-plugin:0.3.1-SNAPSHOT'
+		classpath name: 'resolver-2.9.1'
+		classpath name: 'grolifant-0.14'
 		classpath "org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion"
 		classpath 'io.spring.nohttp:nohttp-gradle:0.0.2.RELEASE'
 		classpath "io.freefair.gradle:aspectj-plugin:4.0.2"
@@ -8,6 +26,18 @@ buildscript {
 	}
 	repositories {
 		maven { url 'https://repo.spring.io/plugins-snapshot' }
+		maven { url 'https://plugins.gradle.org/m2/' }
+		mavenCentral()
+		gradlePluginPortal()
+		jcenter()
+		maven { url 'https://repo.spring.io/plugins-snapshot' }
+		maven {
+			name = "jfreleases"
+			url = "https://releases.jfrog.io/artifactory/oss-releases/"
+		}
+		flatDir{
+			dirs 'libs'
+		}
 		maven { url 'https://plugins.gradle.org/m2/' }
 	}
 }
@@ -27,7 +57,19 @@ ext.milestoneBuild = !(snapshotBuild || releaseBuild)
 dependencyManagementExport.projects = subprojects.findAll { !it.name.contains('-boot') }
 
 repositories {
+	maven { url 'https://repo.spring.io/plugins-snapshot' }
+	maven { url 'https://plugins.gradle.org/m2/' }
 	mavenCentral()
+	gradlePluginPortal()
+	jcenter()
+	maven { url 'https://repo.spring.io/plugins-snapshot' }
+	maven {
+		name = "jfreleases"
+		url = "https://releases.jfrog.io/artifactory/oss-releases/"
+	}
+	flatDir{
+		dirs 'libs'
+	}
 }
 
 subprojects {
@@ -37,5 +79,28 @@ subprojects {
 
 	tasks.withType(JavaCompile) {
 		options.encoding = "UTF-8"
+	}
+	repositories {
+		maven { url 'https://repo.spring.io/plugins-snapshot' }
+		maven { url 'https://plugins.gradle.org/m2/' }
+		mavenCentral()
+		gradlePluginPortal()
+		jcenter()
+		maven { url 'https://repo.spring.io/plugins-snapshot' }
+		maven {
+			name = "jfreleases"
+			url = "https://releases.jfrog.io/artifactory/oss-releases/"
+		}
+		flatDir{
+			dirs 'libs'
+		}
+	}
+	configurations.all {
+		resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+			if (details.requested.group == 'org.mockito' && details.requested.name == 'mockito-core') {
+				details.useVersion '3.3.0' // or any public version you want
+				details.because 'mockito-core:3.3.1 is not publicly available; overriding to a public version'
+			}
+		}
 	}
 }
